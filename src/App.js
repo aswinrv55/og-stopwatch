@@ -82,9 +82,10 @@ function App() {
           padding: 20,
           backgroundColor: "#111",
           borderRadius: 12,
-          width: "9%",
+          width: "300%",
           maxWidth: 200,
           margin: "20px auto",
+          textAlign: "center",
         }}
       >
         ⏱ Activity History
