@@ -5,6 +5,12 @@ function App() {
   const [running, setRunning] = useState(false);
   const [laps, setLaps] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    const storedHistory = JSON.parse(localStorage.getItem("history")) || [];
+    setHistory(storedHistory);
+  }, []);
 
   useEffect(() => {
     let interval;
@@ -25,16 +31,23 @@ function App() {
   };
 
   const addLap = () => {
-    if (laps.length > 0) {
-      const last = laps[0];
-      const diff = time - last.time;
-      setLaps([{ id: laps.length + 1, time, diff }, ...laps]);
-    } else {
-      setLaps([{ id: 1, time, diff: time }]);
-    }
+    const newLap = {
+      id: laps.length + 1,
+      time,
+      diff: laps.length > 0 ? time - laps[0].time : time,
+    };
+    setLaps([newLap, ...laps]);
   };
 
   const reset = () => {
+    const session = {
+      id: Date.now(),
+      date: new Date().toLocaleString(),
+      laps,
+    };
+    const updatedHistory = [session, ...history];
+    setHistory(updatedHistory);
+    localStorage.setItem("history", JSON.stringify(updatedHistory));
     setRunning(false);
     setTime(0);
     setLaps([]);
@@ -43,11 +56,10 @@ function App() {
   return (
     <div
       style={{
-        //minHeight: '100vh',
         backgroundColor: "black",
+        color: "white",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
         alignItems: "center",
         padding: 20,
       }}
@@ -60,12 +72,15 @@ function App() {
           {running ? "⏸" : "▶️"}
         </button>
         <button onClick={addLap} disabled={!running}>
-        🚩
+          🚩
         </button>
         <button onClick={reset}>🔁</button>
       </div>
 
-      <div className="lap-list">
+      <div
+        className="lap-list"
+        style={{ maxHeight: 300, overflowY: "auto", marginTop: 20 }}
+      >
         {laps.map((lap) => (
           <div key={lap.id} className="lap">
             <span>{lap.id.toString().padStart(2, "0")}</span>
@@ -76,52 +91,75 @@ function App() {
       </div>
 
       <div
-        onClick={() => setShowHistory(true)}
+        onClick={() => setShowHistory(!showHistory)}
         style={{
           marginTop: 30,
           padding: 20,
           backgroundColor: "#111",
           borderRadius: 12,
-          width: "9%",
+          width: "300%",
           maxWidth: 200,
-          margin: "20px auto",
+          textAlign: "center",
+          cursor: "pointer",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          MozUserSelect: "none",
+          msUserSelect: "none",
         }}
       >
-        ⏱ Activity History
+        {" "}
+        ⏱ ACTIVITY HISTORY{" "}
       </div>
 
       {showHistory && (
         <div
           style={{
-            //position: "fixed",
-            top: "20%",
-            left: "10%",
-            right: "10%",
+            marginTop: 20,
             backgroundColor: "#111",
             border: "1px solid #444",
             borderRadius: 12,
             padding: 20,
             color: "white",
+            maxWidth: 400,
+            width: "90%",
           }}
         >
           <h2>Activity History</h2>
-          {laps.length === 0 ? (
+
+          {history.length === 0 && laps.length === 0 ? (
             <p>No history recorded</p>
           ) : (
-            <ul>
-              {laps.map((lap) => (
-                <li key={lap.id} style={{ marginBottom: "20px" }}>
-                  Lap {lap.id}: {formatTime(lap.diff)} at {formatTime(lap.time)}
+            <ul style={{ padding: 0 }}>
+              {laps.length > 0 && (
+                <li style={{ marginBottom: 10 }}>
+                  <strong>
+                    Current Session ({new Date().toLocaleString()}):
+                  </strong>
+                  <ul>
+                    {laps.map((lap) => (
+                      <li key={lap.id}>
+                        Lap {lap.id}: {formatTime(lap.diff)} at{" "}
+                        {formatTime(lap.time)}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              )}
+              {history.map((session) => (
+                <li key={session.id} style={{ marginBottom: 10 }}>
+                  <strong>{session.date}</strong>
+                  <ul>
+                    {session.laps.map((lap) => (
+                      <li key={lap.id}>
+                        Lap {lap.id}: {formatTime(lap.diff)} at{" "}
+                        {formatTime(lap.time)}
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               ))}
             </ul>
           )}
-          <button
-            onClick={() => setShowHistory(false)}
-            style={{ borderRadius: 10 }}
-          >
-            Close
-          </button>
         </div>
       )}
     </div>
